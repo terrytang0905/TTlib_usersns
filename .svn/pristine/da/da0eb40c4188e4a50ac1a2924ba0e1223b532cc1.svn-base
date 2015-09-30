@@ -1,0 +1,2 @@
+#application.tripmaster.host=${application.tripmaster.host}
+system.filecloud.url=${system.filecloud.url}

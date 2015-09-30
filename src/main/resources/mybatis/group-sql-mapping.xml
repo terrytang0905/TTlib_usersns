@@ -1,0 +1,215 @@
+<?xml version="1.0" encoding="UTF-8" ?>   
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="group">
+
+	<resultMap id="group" type="com.newroad.user.sns.model.group.Group">
+		<result column="id" 			property="id"/>
+		<result column="name" 			property="name"/>
+		<result column="status" 		property="status"/>
+		<result column="type" 			property="type"/>
+		<result column="creator" 		property="creator"/>
+		<result column="createTime" 	property="createTime"/>
+		<result column="needAuth" 		property="needAuth"/>
+		<result column="description" 	property="description"/>
+		<result column="notice" 		property="notice"/>
+		<result column="icon" 			property="icon"/>
+	</resultMap>
+
+	<!-- 检索群组 -->
+	<select id="findGroupList" parameterType="java.util.Map" resultType="java.util.Map">
+		select id groupID,
+			   name groupName,
+			   date_format(createTime,'%Y-%m-%d %H:%i:%s') createTime,
+			   description,
+			   icon
+		 from sns_group
+		where 1=1
+		  and status = 1
+		<if test="groupName != null">and name like '%${groupName}%'</if>
+		<if test="groupID != null">and id = #{groupID}</if>
+	</select>
+	
+	<insert id="createGroup" parameterType="java.util.Map">
+		insert into sns_group(
+			name,
+			status,
+			type,
+			creator,
+			createTime,
+			needAuth,
+			description,
+			icon
+		) values (
+			#{groupName},
+			1,
+			#{type},
+			#{creator},
+			now(),
+			#{needAuth},
+			'${description}',
+			#{icon}
+		)  
+	</insert>
+	
+	<!-- 更新group -->
+	<update id="editGroup" parameterType="java.util.Map">
+		update sns_group
+		   set id = id
+		<if test="groupName != null">,name = #{groupName}</if>
+		<if test="needAuth != null">,needAuth = #{needAuth}</if>
+		<if test="status != null">,status = #{status}</if>
+		<if test="type != null">,type = #{type}</if>
+		<if test="description != null">,description = #{description}</if>
+		<if test="notice != null">,notice = #{notice}</if>
+		<if test="icon != null">,icon = #{icon}</if>
+		 where 1=1
+		<if test="groupID != null">and id = #{groupID}</if>
+		<if test="groupID == null">and 1=2</if>
+	</update>
+	
+	<insert id="createGroupRequest" parameterType="java.util.Map" >
+		insert into sns_group_req(
+			groupID,
+			status,
+			type,
+			account,
+			direction,
+			validateText,
+			requestTime
+		) values (
+			#{groupID},
+			1,
+			#{type},
+			#{account},
+			#{direction},
+			#{validateText},
+			now()
+		)
+	</insert>
+	
+	<!-- 用户申请列表 -->
+	<select id="userAppliedList" parameterType="java.util.Map" resultType="java.util.Map">
+		select a.id requestID,
+			   a.account userID,
+			   b.nickName,
+			   b.photo,
+			   a.validateText 
+		 from sns_group_req a, sns_user b
+		where 1=1
+		  and a.type = 1
+		  and a.direction = 1
+		  and a.account = b.id
+		<if test="groupID != null">and a.groupID = #{groupID}</if>
+		<if test="groupID == null">and 1=2</if>
+	</select>
+	
+	<!-- 群组邀请列表 -->
+	<select id="groupInviteList" parameterType="java.util.Map" resultType="java.util.Map">
+		select a.id requestID,
+			   a.groupID,
+			   b.name groupName,
+			   b.icon,
+			   b.description,
+			   a.validateText 
+		 from sns_group_req a, sns_group b
+		where 1=1
+		  and a.type = 1
+		  and a.direction = 2
+		  and a.groupID = b.id
+		<if test="userID != null">and a.account= #{userID}</if>
+		<if test="userID == null">and 1=2</if>
+	</select>
+	
+	<!-- 群组请求/邀请回应 -->
+	<update id="responseGroupRequest" parameterType="java.util.Map">
+		update sns_group_req
+		   set id = id
+		<if test="status != null">,status = #{status}</if>
+		 where 1=1
+		<if test="requestID != null">and id = #{requestID}</if>
+		<if test="requestID == null">and 1=2</if>
+	</update>
+	
+	<!-- 用户群组列表 -->
+	<select id="userGroupList" parameterType="java.util.Map" resultType="java.util.Map">
+		select a.groupID,
+			   b.name groupName,
+			   b.createTime,
+			   b.description,
+			   b.icon
+		 from sns_group_user a,sns_group b
+		where 1=1
+		  and b.status = 1
+		  and a.groupID = b.id
+		<if test="userID != null">and a.userID = #{userID}</if>
+		<if test="userID == null">and 1=2</if>
+	</select>
+	
+	<!-- 用户群组列表 -->
+	<select id="groupMemberList" parameterType="java.util.Map" resultType="java.util.Map">
+		select a.userID,
+			   ifnull(a.displayName,b.nickName) displayName, 
+			   b.photo,
+			   a.role
+		 from sns_group_user a,sns_user b
+		where 1=1
+		  and a.userID = b.id
+		<if test="groupID != null">and a.groupID = #{groupID}</if>
+		<if test="groupID == null">and 1=2</if>
+	</select>
+	
+	<!-- 批量群组成员 -->
+	<delete id="removeMember" parameterType="java.util.Map">
+		delete from sns_group_user 
+		 where 1=1
+		<if test="groupID != null">and groupID = #{groupID}</if>
+		<if test="groupID == null">and 1=2</if>
+		   and userID in
+		<foreach collection="member" item="item" open="(" close=")" separator=",">
+		  	#{item}
+		</foreach>
+	</delete>
+	
+	<!-- 更新group -->
+	<update id="editMemberCard" parameterType="java.util.Map">
+		update sns_group_user
+		   set id = id
+		<if test="displayName != null">,displayName = #{displayName}</if>
+		<if test="gender != null">,gender = #{gender}</if>
+		<if test="phone != null">,phone = #{phone}</if>
+		<if test="email != null">,email = #{email}</if>
+		<if test="description != null">,description = #{description}</if>
+		 where 1=1
+		<if test="groupID != null">and groupID = #{groupID}</if>
+		<if test="groupID == null">and 1=2</if>
+		<if test="userID != null">and userID = #{userID}</if>
+		<if test="userID == null">and 1=2</if>
+	</update>
+	
+	<insert id="createGroupMember" parameterType="java.util.Map" >
+		insert into sns_group_req(
+			groupID,
+			userID
+		) select 
+			groupID,
+			account
+	      from sns_group_req a
+		 wehre 1=1
+		   and a.type = 1
+		   and a.status = 2
+		<if test="requestID != null">and a.id = #{requestID}</if>
+		<if test="requestID == null">and 1=2</if>
+	</insert>
+	
+	<!-- 更新group -->
+	<update id="editMemberRole" parameterType="java.util.Map">
+		update sns_group_user
+		   set id = id
+		<if test="role != null">,role = #{role}</if>
+		 where 1=1
+		<if test="groupID != null">and groupID = #{groupID}</if>
+		<if test="groupID == null">and 1=2</if>
+		<if test="userID != null">and userID = #{userID}</if>
+		<if test="userID == null">and 1=2</if>
+	</update>
+</mapper>   

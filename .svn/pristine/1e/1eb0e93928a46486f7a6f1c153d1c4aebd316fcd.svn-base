@@ -1,0 +1,3 @@
+mariadb.jdbc.url=${mariadb.jdbc.url}
+mariadb.jdbc.username=${mariadb.jdbc.username}
+mariadb.jdbc.password=${mariadb.jdbc.password}

@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="UTF-8" ?>   
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="secure">
+
+	<resultMap id="secureApp" type="com.newroad.user.sns.model.secure.SecureApp">
+		<result column="id" 			property="id"/>
+		<result column="name" 			property="name"/>
+		<result column="status" 		property="status"/>
+		<result column="create_user" 	property="createUser"/>
+		<result column="create_time" 	property="createTime"/>
+	</resultMap>
+	
+	<resultMap id="secureAppClient" type="com.newroad.user.sns.model.secure.SecureAppClient">
+		<result column="id" 			property="id"/>
+		<result column="app_id" 		property="appId"/>
+		<result column="group_id" 		property="groupId"/>
+		<result column="name" 			property="name"/>
+		<result column="app_name" 		property="appName"/>
+		<result column="client_key" 	property="key"/>
+		<result column="secret" 		property="secret"/>
+		<result column="status" 		property="status"/>
+		<result column="app_status" 	property="appStatus"/>
+		<result column="create_user" 	property="createUser"/>
+		<result column="create_time" 	property="createTime"/>
+	</resultMap>
+	
+	<resultMap id="secureGroup" type="com.newroad.user.sns.model.secure.SecureGroup">
+		<result column="id" 			property="id"/>
+		<result column="name" 			property="name"/>
+		<result column="status" 		property="status"/>
+		<result column="type" 			property="type"/>
+		<result column="create_user" 	property="createUser"/>
+		<result column="create_time" 	property="createTime"/>
+	</resultMap>
+	
+	<resultMap id="secureGroupAccess" type="com.newroad.user.sns.model.secure.SecureGroupAccess">
+		<result column="id" 			property="id"/>
+		<result column="group_id" 		property="groupId"/>
+		<result column="name" 			property="name"/>
+		<result column="url" 			property="url"/>
+		<result column="service" 		property="service"/>
+		<result column="status" 		property="status"/>
+		<result column="create_user" 	property="createUser"/>
+		<result column="create_time" 	property="createTime"/>
+	</resultMap>
+	
+	<!-- 获取安全应用客户端 -->
+	<select id="getSecureAppClient" resultMap="secureAppClient" parameterType="java.util.Map">
+		select sa.name app_name, sa.status app_status, sac.*
+		from sns_secure_app_client sac, sns_secure_app sa		
+		where sac.app_id = sa.id 
+		      and sac.client_key = #{consumerKey}
+		limit 1
+	</select>
+	
+	<!-- 查询权限分组 -->
+	<select id="findSecureGroupById" parameterType="java.lang.Integer" resultMap="secureGroup">
+		select * from sns_secure_group where status=0 and id=${value}
+	</select>
+	
+	<!-- 查询API接口访问权限 -->
+	<select id="findSecureAccess" parameterType="java.util.Map" resultMap="secureGroupAccess">
+		select * from sns_secure_group_access 
+		where status=0 
+			and service = ${serviceName}
+			and url = ${url}
+	</select>
+</mapper>   
